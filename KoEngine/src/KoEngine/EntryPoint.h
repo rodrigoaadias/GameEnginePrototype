@@ -15,7 +15,7 @@ extern KoEngine::Application* KoEngine::CreateApplication();
 // }
 
 
-class KOENGINE_API KoEngineApp : public IApp
+class KoEngineApp : public IApp
 {
 public:
 	bool Init() override
@@ -24,6 +24,7 @@ public:
 		KoEngine::Log::Init();
 
 		KE_LOG_INFO("KoEngine application started!!\n");
+		return 1;
 	}
 
 	void Exit() override
