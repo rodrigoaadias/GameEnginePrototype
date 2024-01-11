@@ -1,6 +1,6 @@
 #include <KoEngine.h>
 
-class MyGameApp : public KoEngine::Application
+class KOENGINE_API MyGameApp : public KoEngine::Application
 {
 public:
 	MyGameApp() {

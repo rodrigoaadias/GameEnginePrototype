@@ -14,6 +14,7 @@ extern KoEngine::Application* KoEngine::CreateApplication();
 // 	delete app;
 // }
 
+
 class KOENGINE_API KoEngineApp : public IApp
 {
 public:
