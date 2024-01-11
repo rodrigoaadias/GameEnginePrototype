@@ -5,8 +5,13 @@
 extern KoEngine::Application* KoEngine::CreateApplication();
 
 int main(int argc, char** argv) {
-	printf("Starting KoEngine!\n");
+
+	KoEngine::Log::Init();
+	KE_CORE_LOG_WARN("Initialized Logger");
+	
 	auto app = KoEngine::CreateApplication();
+	int number = 15;
+	KE_LOG_INFO("App initialized! Hello! Var={0}", number);
 	app->Run();
 	delete app;
 }
