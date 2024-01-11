@@ -11,4 +11,7 @@ namespace KoEngine {
 
 		void Run();
 	};
+
+	// to be defined on CLIENT
+	KoEngine::Application* CreateApplication();
 }

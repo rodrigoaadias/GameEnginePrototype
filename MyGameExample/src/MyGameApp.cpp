@@ -13,8 +13,7 @@ public:
 	}
 };
 
-int main() {
-	MyGameApp* app = new MyGameApp();
-	app->Run();
-	delete app;
+KoEngine::Application* KoEngine::CreateApplication()
+{
+	return new MyGameApp();
 }
