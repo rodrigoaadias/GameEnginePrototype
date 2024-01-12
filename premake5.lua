@@ -31,19 +31,10 @@ project "KoEngine"
         "%{vulkanpath}/Include"
     }
 
-    syslibdirs -- VC++ lib directory
-    {
-        "%{vulkanpath}/Lib"
-    }
-
-    externalincludedirs -- VC++ external include
-    {
-        "%{vulkanpath}/Include"
-    }
-
     libdirs -- Linker -> General -> Additional Library Directories
     {
-        "%{prj.name}/lib"
+        "%{prj.name}/lib",
+        "%{vulkanpath}/Lib"
     }
 
     links -- Linker -> Input -> Additional Dependencies
@@ -121,19 +112,10 @@ project "MyGameExample"
         "%{vulkanpath}/Include"
     }
 
-    syslibdirs
-    {
-        "%{vulkanpath}/Lib"
-    }
-
-    externalincludedirs
-    {
-        "%{vulkanpath}/Include"
-    }
-
     libdirs 
     {
-        "KoEngine/lib"
+        "KoEngine/lib",
+        "%{vulkanpath}/Lib"
     }
 
     links
