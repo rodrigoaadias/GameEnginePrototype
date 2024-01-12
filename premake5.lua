@@ -4,6 +4,7 @@ workspace "KoEngine" -- Solution name
         "Debug",
         "Release"
     }
+    startproject "MyGameExample"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}" -- output example: Debug-windows-x86_64
 vulkanpath = os.getenv("VULKAN_SDK") -- Gets the Vulkan's environment variable
@@ -26,7 +27,8 @@ project "KoEngine"
     includedirs -- C/C++ -> General -> Additional Include Directories
     {
         "%{prj.name}/vendor/spdlog/include",
-        "%{prj.name}/vendor/The-Forge/Common_3"
+        "%{prj.name}/vendor/The-Forge/Common_3",
+        "%{vulkanpath}/Include"
     }
 
     syslibdirs -- VC++ lib directory
@@ -115,7 +117,8 @@ project "MyGameExample"
     {
         "KoEngine/vendor/spdlog/include",
         "KoEngine/vendor/The-Forge/Common_3",
-        "KoEngine/src"
+        "KoEngine/src",
+        "%{vulkanpath}/Include"
     }
 
     syslibdirs
