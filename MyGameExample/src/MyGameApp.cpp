@@ -1,17 +1,38 @@
-#include <KoEngine.h>
+#include "MyGameApp.h"
 
-class MyGameApp : public KoEngine::Application
+bool MyGameApp::Init()
 {
-public:
-	MyGameApp() {
+	return true;
+}
 
-	}
+void MyGameApp::Tick(float deltaTime)
+{
 
-	~MyGameApp()
-	{
+}
 
-	}
-};
+void MyGameApp::Draw()
+{
+	
+}
+
+bool MyGameApp::Load(ReloadDesc* pReloadDesc)
+{
+	return true;
+}
+
+void MyGameApp::Unload(ReloadDesc* pReloadDesc)
+{
+}
+
+const char* MyGameApp::GetAppName() const
+{
+	return "MyGameApp";
+}
+
+void MyGameApp::Exit()
+{
+	
+}
 
 KoEngine::Application* KoEngine::CreateApplication()
 {

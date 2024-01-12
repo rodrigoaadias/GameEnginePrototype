@@ -9,8 +9,4 @@ namespace KoEngine {
 	Application::~Application()
 	{
 	}
-
-	void Application::Run()
-	{
-	}
 }
