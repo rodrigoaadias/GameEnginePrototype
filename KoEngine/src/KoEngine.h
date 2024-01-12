@@ -7,3 +7,7 @@
 // ----- Entry Point -------------------------------------------
 #include "KoEngine/EntryPoint.h"
 // -------------------------------------------------------------
+
+// The-Forge
+#include "../vendor/The-Forge/Common_3/Application/Interfaces/IApp.h"
+#include "../vendor/The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"

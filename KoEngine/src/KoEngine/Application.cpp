@@ -12,6 +12,5 @@ namespace KoEngine {
 
 	void Application::Run()
 	{
-		while (true);
 	}
 }
