@@ -1,21 +1,21 @@
-workspace "KoEngine"
-    configurations 
+workspace "KoEngine" -- Solution name
+    configurations
     { 
         "Debug",
         "Release"
     }
 
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
-vulkanpath = os.getenv("VULKAN_SDK")
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}" -- output example: Debug-windows-x86_64
+vulkanpath = os.getenv("VULKAN_SDK") -- Gets the Vulkan's environment variable
 
 project "KoEngine"
-    location "KoEngine"
-    kind "SharedLib"
+    location "KoEngine" -- Project's file location
+    kind "SharedLib" -- .dll
     language "C++"
     architecture "x64"
 
-    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+    targetdir ("bin/" .. outputdir .. "/%{prj.name}") -- General -> Output Directory
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}") -- General -> Intermediate Directory
  
     files
     {
@@ -23,7 +23,7 @@ project "KoEngine"
         "%{prj.name}/src/**.cpp"
     }
 
-    includedirs
+    includedirs -- C/C++ -> General -> Additional Include Directories
     {
         "%{prj.name}/vendor/spdlog/include",
         "%{prj.name}/vendor/The-Forge/Common_3"
@@ -39,12 +39,12 @@ project "KoEngine"
         "%{vulkanpath}/Include"
     }
 
-    libdirs 
+    libdirs -- Linker -> General -> Additional Library Directories
     {
         "%{prj.name}/lib"
     }
 
-    links
+    links -- Linker -> Input -> Additional Dependencies
     {
         "kernel32.lib",
         "user32.lib",
@@ -64,9 +64,10 @@ project "KoEngine"
     }
 
     filter "system:windows"
-        systemversion "10.0.17763.0"
+        systemversion "10.0.17763.0" -- General -> Windows SDK Version
+		toolset "v141" -- General -> Platform Toolset
 
-        defines
+        defines -- Ifdefs
         {
             "KE_WINDOWS_PLATFORM",
             "KE_BUILD_DLL"
@@ -74,11 +75,11 @@ project "KoEngine"
 
         postbuildcommands
         {
-            ("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/MyGameExample")
+            ("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/MyGameExample") -- Copy bin files from KoEngine to MyGameExample
         }
  
     filter "configurations:Debug"
-        staticruntime "off"
+        staticruntime "off" -- C/C++ -> Code Generation -> Runtime Library (/MD)
         defines 
         {
             "DEBUG" 
@@ -154,6 +155,7 @@ project "MyGameExample"
 
     filter "system:windows"
         systemversion "10.0.17763.0"
+		toolset "v141"
 
         defines
         {
