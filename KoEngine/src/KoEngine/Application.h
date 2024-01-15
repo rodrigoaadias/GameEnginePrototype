@@ -1,25 +1,24 @@
 #pragma once
+#include <Application/Interfaces/IApp.h>
+
 #include "Core.h"
 
-class ReloadDesc; 
+struct ReloadDesc;
 
 namespace KoEngine {
 
-	class KOENGINE_API Application
+	class KOENGINE_API Application : public IApp
 	{
 	public:
-		Application();
-		virtual ~Application();
-		
-		virtual bool Init() = 0;
-		virtual void Exit() = 0;
-		virtual bool Load(ReloadDesc* pReloadDesc) = 0;
-		virtual void Unload(ReloadDesc* pReloadDesc) = 0;
-		virtual void Tick(float deltaTime) = 0;
-		virtual void Draw() = 0;
-		virtual const char* GetAppName() const = 0;
-	};
+		Application() = default;
+		virtual ~Application() = default;
 
-	// to be defined on CLIENT
-	KoEngine::Application* CreateApplication();
+		virtual bool Init() override;
+		virtual void Exit() override;
+		virtual bool Load(ReloadDesc* pReloadDesc) override;
+		virtual void Unload(ReloadDesc* pReloadDesc) override;
+		virtual void Update(float deltaTime) override;
+		virtual void Draw() override;
+		virtual const char* GetName() override;
+	};
 }
