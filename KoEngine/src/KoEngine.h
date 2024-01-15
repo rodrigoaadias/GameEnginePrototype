@@ -9,6 +9,16 @@
 // -------------------------------------------------------------
 
 // The-Forge
-#include "../vendor/The-Forge/Common_3/Application/Interfaces/IApp.h"
-#include "../vendor/The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
+#include <Application/Interfaces/IApp.h>
+#include <Application/Interfaces/ICameraController.h>
+#include <Application/Interfaces/IUI.h>
+#include <Application/Interfaces/IFont.h>
+#include <Application/Interfaces/IInput.h>
+#include <Application/Interfaces/IProfiler.h>
+#include <Resources/ResourceLoader/Interfaces/IResourceLoader.h>
 #include <Graphics/Interfaces/IGraphics.h>
+#include <Game/Interfaces/IScripting.h>
+#include <Utilities/Interfaces/ILog.h>
+#include <Utilities/Interfaces/IFileSystem.h>
+#include <Utilities/Interfaces/ITime.h>
+#include <Utilities/Math/MathTypes.h>
