@@ -6,8 +6,9 @@
 
 // ----- Entry Point -------------------------------------------
 #include "KoEngine/EntryPoint.h"
+#include "KoEngine/UniformBlock.h"
 // -------------------------------------------------------------
-
+#include "KoEngine/Vertex.h"
 // The-Forge
 #include <Application/Interfaces/IApp.h>
 #include <Application/Interfaces/ICameraController.h>
@@ -22,3 +23,4 @@
 #include <Utilities/Interfaces/IFileSystem.h>
 #include <Utilities/Interfaces/ITime.h>
 #include <Utilities/Math/MathTypes.h>
+

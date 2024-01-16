@@ -29,7 +29,8 @@ public:
 	bool addDepthBuffer();
 
 private:
-    Renderer* pRenderer = nullptr;
+    void ResourcePathDirs();
+    SwapChain* pSwapChain = NULL;
     
 };
 

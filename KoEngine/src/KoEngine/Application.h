@@ -4,12 +4,28 @@
 #include "Core.h"
 
 struct ReloadDesc;
+class Renderer;
+struct SwapChain;
+struct Queue;
 
 namespace KoEngine {
 
 	class KOENGINE_API Application : public IApp
 	{
+	protected:
+		Renderer* pRenderer = nullptr;
+		SwapChain* pSwapChain = nullptr;
+		Queue* pGraphicsQueue = NULL;
+		/// <summary>
+		/// Compares the settings of the vsync in IApp with the one in the swapChain.
+		/// If they differ then wait for the end of the graphics queue and updates the
+		/// swap chain with the new setting. This should be invoked in the beginning of
+		/// the Draw() method and will run at least once, when the Draw() method runs 
+		/// for the first time.
+		/// </summary>
+		void UpdateVSyncSettings();
 	public:
+		static const uint32_t swapChainSize = 3;
 		Application() = default;
 		virtual ~Application() = default;
 
