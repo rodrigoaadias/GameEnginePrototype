@@ -29,9 +29,31 @@ public:
 	bool addDepthBuffer();
 
 private:
-    void ResourcePathDirs();
-    SwapChain* pSwapChain = NULL;
-    
+    void SetRenderer(); //FIXME: move to application when it no longer crashes
+    void ResourcePathDirs(); //FIXME: move to application when it no longer crashes
+    /// <summary>
+    /// Binds the UI, draw it and then unbinds it. It's used at the end of the draw of the UI.
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <param name="renderTarget"></param>
+    void DrawUI(Cmd* cmd, RenderTarget* renderTarget);
+    void SetupSwapChain();
+    /// <summary>
+    /// When we begin a frame draw we have to get the correct semaphores, targets and fences.
+    /// They vary based on the state of the swap chain. It also returns where in the swap chain
+    /// we are because that information will be needed later.
+    /// </summary>
+    /// <param name="pCurrentRenderTarget"></param>
+    /// <param name="pCurrentRenderCompleteSemaphore"></param>
+    /// <param name="pCurrentRenderCompleteFence"></param>
+    uint32_t SetupCurrentTargetSemaphoreAndFence(RenderTarget** pCurrentRenderTarget,
+        Semaphore** pCurrentRenderCompleteSemaphore, Fence** pCurrentRenderCompleteFence);
+    /// <summary>
+    /// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+    /// Will block waiting.
+    /// </summary>
+    /// <param name="renderCompleteFence"></param>
+    void StallIfCPUIsRunningAhead(Fence* renderCompleteFence);
 };
 
 DEFINE_KOENGINE_APP(MyGameApp);

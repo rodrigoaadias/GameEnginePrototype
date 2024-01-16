@@ -4,13 +4,6 @@
 
 
 
-ProfileToken   gGpuProfileToken;
-
-
-CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
-Cmd*     pCmds[KoEngine::Application::swapChainSize];
-
-
 RenderTarget* pDepthBuffer = NULL;
 Fence*        pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 Semaphore*    pImageAcquiredSemaphore = NULL;
@@ -707,7 +700,6 @@ bool MyGameApp::Init()
 	Application::Init();
 		ResourcePathDirs();
 
-
 		gVertexLayoutDefault.mAttribCount = 3;
 		gVertexLayoutDefault.mAttribs[0].mSemantic = SEMANTIC_POSITION;
 		gVertexLayoutDefault.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
@@ -749,37 +741,14 @@ bool MyGameApp::Init()
 			LOGF(LogLevel::eERROR, "\"%s\": Error in reading file.", pTextFileName[0]);
 			return false;
 		}
-
-		// Actual diffs and tests
-		RendererDesc settings;
-		memset(&settings, 0, sizeof(settings));
-		settings.mD3D11Supported = true;
-		settings.mGLESSupported = true;
-		initRenderer(GetName(), &settings, &pRenderer);
+		SetRenderer();
 
 		//check for init success
 		if (!pRenderer)
 			return false;
 
-		QueueDesc queueDesc = {};
-		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
-		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
-		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
-		for (uint32_t i = 0; i < swapChainSize; ++i)
-		{
-			CmdPoolDesc cmdPoolDesc = {};
-			cmdPoolDesc.pQueue = pGraphicsQueue;
-			addCmdPool(pRenderer, &cmdPoolDesc, &pCmdPools[i]);
-			CmdDesc cmdDesc = {};
-			cmdDesc.pPool = pCmdPools[i];
-			addCmd(pRenderer, &cmdDesc, &pCmds[i]);
-		}
+		SetupSwapChain();
 
-		for (uint32_t i = 0; i < swapChainSize; ++i)
-		{
-			addFence(pRenderer, &pRenderCompleteFences[i]);
-			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
-		}
 		addSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
 		initResourceLoaderInterface(pRenderer);
@@ -799,16 +768,6 @@ bool MyGameApp::Init()
 		UserInterfaceDesc uiRenderDesc = {};
 		uiRenderDesc.pRenderer = pRenderer;
 		initUserInterface(&uiRenderDesc);
-
-		// Initialize micro profiler and its UI.
-		ProfilerDesc profiler = {};
-		profiler.pRenderer = pRenderer;
-		profiler.mWidthUI = mSettings.mWidth;
-		profiler.mHeightUI = mSettings.mHeight;
-		initProfiler(&profiler);
-
-		// Gpu profiler can only be added after initProfile.
-		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
 
 		//Load Zip file texture
 		TextureLoadDesc textureDescZip = {};
@@ -1050,20 +1009,21 @@ void MyGameApp::Update(float deltaTime)
 
 void MyGameApp::Draw()
 {
+	//before each frame verify if the vsync setting is consistent.
 	UpdateVSyncSettings();
-
-		uint32_t swapchainImageIndex;
-		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
-
-		RenderTarget* pRenderTarget = pSwapChain->ppRenderTargets[swapchainImageIndex];
-		Semaphore*    pRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
-		Fence*        pRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
-
-		// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
-		FenceStatus fenceStatus;
-		getFenceStatus(pRenderer, pRenderCompleteFence, &fenceStatus);
-		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
-			waitForFences(pRenderer, 1, &pRenderCompleteFence);
+	//Get the pointers to the things that belong to the current swapchain image
+	RenderTarget* pCurrentRenderTarget = NULL;
+	Semaphore*    pCurrentRenderCompleteSemaphore = NULL;
+	Fence*        pCurrentRenderCompleteFence = NULL;
+	auto swapchainImageIndex = SetupCurrentTargetSemaphoreAndFence(&pCurrentRenderTarget, 
+		&pCurrentRenderCompleteSemaphore, 
+		&pCurrentRenderCompleteFence);
+	StallIfCPUIsRunningAhead(pCurrentRenderCompleteFence);
+		//// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+		//FenceStatus fenceStatus;
+		//getFenceStatus(pRenderer, pCurrentRenderCompleteFence, &fenceStatus);
+		//if (fenceStatus == FENCE_STATUS_INCOMPLETE)
+		//	waitForFences(pRenderer, 1, &pCurrentRenderCompleteFence);
 
 		resetCmdPool(pRenderer, pCmdPools[gFrameIndex]);
 
@@ -1083,21 +1043,18 @@ void MyGameApp::Draw()
 		Cmd* cmd = pCmds[gFrameIndex];
 		beginCmd(cmd);
 
-		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
-
 		RenderTargetBarrier barriers[] = {
-			{ pRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
+			{ pCurrentRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
 		};
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
+		cmdBindRenderTargets(cmd, 1, &pCurrentRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, pCurrentRenderTarget->mWidth, pCurrentRenderTarget->mHeight);
 
 		//// draw skybox
 #pragma region Skybox_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw skybox");
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 1.0f, 1.0f);
 		cmdBindPipeline(cmd, pPipelineSkybox);
 
 		cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetFrameUniforms);
@@ -1106,54 +1063,34 @@ void MyGameApp::Draw()
 		const uint32_t skyboxStride = sizeof(float) * 4;
 		cmdBindVertexBuffer(cmd, 1, &pSkyboxVertexBuffer, &skyboxStride, NULL);
 		cmdDraw(cmd, 36, 0);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 0.0f, 1.0f);
 #pragma endregion
 
 		////// draw Zip Model
 #pragma region Zip_Model_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Zip Model");
 		cmdBindPipeline(cmd, pBasicPipeline);
 
 		cmdBindVertexBuffer(cmd, 1, &pMesh->pVertexBuffers[0], &pMesh->mVertexStrides[0], NULL);
 		cmdBindIndexBuffer(cmd, pMesh->pIndexBuffer, pMesh->mIndexType, 0);
 		cmdDrawIndexed(cmd, pMesh->mIndexCount, 0, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 #pragma endregion
 
 		////draw Cube with Zip texture
 #pragma region Cube_Zip_Texture_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Zip File Texture");
 		cmdBindPipeline(cmd, pZipTexturePipeline);
 
 		const uint32_t cubeStride = sizeof(float) * 8;
 		cmdBindVertexBuffer(cmd, 1, &pZipTextureVertexBuffer, &cubeStride, NULL);
 		cmdDraw(cmd, 36, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 #pragma endregion
 
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
-		{
-			LoadActionsDesc loadActions = {};
-			loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+		
+		DrawUI(cmd, pCurrentRenderTarget);
+		
 
-			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-
-			gFrameTimeDraw.mFontColor = 0xff00ffff;
-			gFrameTimeDraw.mFontSize = 18.0f;
-			gFrameTimeDraw.mFontID = gFontID;
-			float2 txtSize = cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
-			cmdDrawGpuProfile(cmd, float2(8.f, txtSize.y + 75.f), gGpuProfileToken, &gFrameTimeDraw);
-
-			cmdDrawUserInterface(cmd);
-			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-		}
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-
-		barriers[0] = { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
+		barriers[0] = { pCurrentRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-		cmdEndGpuFrameProfile(cmd, gGpuProfileToken);
 		endCmd(cmd);
 
 		QueueSubmitDesc submitDesc = {};
@@ -1161,14 +1098,14 @@ void MyGameApp::Draw()
 		submitDesc.mSignalSemaphoreCount = 1;
 		submitDesc.mWaitSemaphoreCount = 1;
 		submitDesc.ppCmds = &cmd;
-		submitDesc.ppSignalSemaphores = &pRenderCompleteSemaphore;
+		submitDesc.ppSignalSemaphores = &pCurrentRenderCompleteSemaphore;
 		submitDesc.ppWaitSemaphores = &pImageAcquiredSemaphore;
-		submitDesc.pSignalFence = pRenderCompleteFence;
+		submitDesc.pSignalFence = pCurrentRenderCompleteFence;
 		queueSubmit(pGraphicsQueue, &submitDesc);
 		QueuePresentDesc presentDesc = {};
 		presentDesc.mIndex = swapchainImageIndex;
 		presentDesc.mWaitSemaphoreCount = 1;
-		presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphore;
+		presentDesc.ppWaitSemaphores = &pCurrentRenderCompleteSemaphore;
 		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.mSubmitDone = true;
 		queuePresent(pGraphicsQueue, &presentDesc);
@@ -1546,3 +1483,65 @@ bool MyGameApp::addSwapChain()
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
 	}
+	void MyGameApp::DrawUI(Cmd* cmd, RenderTarget *renderTarget)
+	{
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+
+		cmdBindRenderTargets(cmd, 1, &renderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
+
+		cmdDrawUserInterface(cmd);
+		cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+	}
+	void MyGameApp::SetRenderer()
+	{
+		RendererDesc settings;
+		memset(&settings, 0, sizeof(settings));
+		settings.mD3D11Supported = true;
+		settings.mGLESSupported = true;
+		initRenderer(GetName(), &settings, &pRenderer);
+	}
+	void MyGameApp::SetupSwapChain()
+	{
+		QueueDesc queueDesc = {};
+		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
+		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
+		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+		for (uint32_t i = 0; i < swapChainSize; ++i)
+		{
+			CmdPoolDesc cmdPoolDesc = {};
+			cmdPoolDesc.pQueue = pGraphicsQueue;
+			addCmdPool(pRenderer, &cmdPoolDesc, &pCmdPools[i]);
+			CmdDesc cmdDesc = {};
+			cmdDesc.pPool = pCmdPools[i];
+			addCmd(pRenderer, &cmdDesc, &pCmds[i]);
+		}
+
+		for (uint32_t i = 0; i < swapChainSize; ++i)
+		{
+			addFence(pRenderer, &pRenderCompleteFences[i]);
+			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
+		}
+	}
+	uint32_t MyGameApp::SetupCurrentTargetSemaphoreAndFence(RenderTarget** pCurrentRenderTarget,
+		Semaphore** pCurrentRenderCompleteSemaphore, Fence** pCurrentRenderCompleteFence)
+	{
+		uint32_t swapchainImageIndex;
+		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
+
+		*pCurrentRenderTarget = pSwapChain->ppRenderTargets[swapchainImageIndex];
+		*pCurrentRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
+		*pCurrentRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
+		return swapchainImageIndex;
+	}
+
+	void MyGameApp::StallIfCPUIsRunningAhead(Fence* renderCompleteFence)
+	{
+		// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+		FenceStatus fenceStatus;
+		getFenceStatus(pRenderer, renderCompleteFence, &fenceStatus);
+		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
+			waitForFences(pRenderer, 1, &renderCompleteFence);
+	}
+
+	

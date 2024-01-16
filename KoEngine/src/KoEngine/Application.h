@@ -7,15 +7,25 @@ struct ReloadDesc;
 class Renderer;
 struct SwapChain;
 struct Queue;
-
+struct CmdPool;
+struct Cmd;
+struct Fence;
+struct Semaphore;
 namespace KoEngine {
 
 	class KOENGINE_API Application : public IApp
 	{
+	public:
+		static const uint32_t swapChainSize = 3;
 	protected:
 		Renderer* pRenderer = nullptr;
 		SwapChain* pSwapChain = nullptr;
+
 		Queue* pGraphicsQueue = NULL;
+		Cmd* pCmds[KoEngine::Application::swapChainSize];
+		CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
+		Fence* pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
+		Semaphore* pRenderCompleteSemaphores[KoEngine::Application::swapChainSize] = { NULL };
 		/// <summary>
 		/// Compares the settings of the vsync in IApp with the one in the swapChain.
 		/// If they differ then wait for the end of the graphics queue and updates the
@@ -25,7 +35,7 @@ namespace KoEngine {
 		/// </summary>
 		void UpdateVSyncSettings();
 	public:
-		static const uint32_t swapChainSize = 3;
+		
 		Application() = default;
 		virtual ~Application() = default;
 
@@ -36,5 +46,6 @@ namespace KoEngine {
 		virtual void Update(float deltaTime) override;
 		virtual void Draw() override;
 		virtual const char* GetName() override;
+
 	};
 }
