@@ -5,7 +5,7 @@
 
 
 ProfileToken   gGpuProfileToken;
-Renderer*      pRenderer = NULL;
+
 
 Queue*   pGraphicsQueue = NULL;
 CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
