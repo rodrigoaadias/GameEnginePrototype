@@ -6,6 +6,7 @@
 
 // ----- Entry Point -------------------------------------------
 #include "KoEngine/EntryPoint.h"
+#include "KoEngine/UniformBlock.h"
 // -------------------------------------------------------------
 #include "KoEngine/Vertex.h"
 // The-Forge

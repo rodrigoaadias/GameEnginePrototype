@@ -2,15 +2,6 @@
 
 #define SIZEOF_ARR(x) sizeof(x)/sizeof(x[0])
 
-/// Demo structures
-
-struct UniformBlock
-{
-	CameraMatrix mProjectView;
-	mat4 mModelMatCapsule;
-	mat4 mModelMatCube;
-};
-
 
 
 const uint32_t gImageCount = 3;
