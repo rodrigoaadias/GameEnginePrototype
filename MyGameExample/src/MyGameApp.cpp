@@ -4,19 +4,18 @@
 
 
 
-const uint32_t gImageCount = 3;
 ProfileToken   gGpuProfileToken;
 Renderer*      pRenderer = NULL;
 
 Queue*   pGraphicsQueue = NULL;
-CmdPool* pCmdPools[gImageCount];
-Cmd*     pCmds[gImageCount];
+CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
+Cmd*     pCmds[KoEngine::Application::swapChainSize];
 
 SwapChain*    pSwapChain = NULL;
 RenderTarget* pDepthBuffer = NULL;
-Fence*        pRenderCompleteFences[gImageCount] = { NULL };
+Fence*        pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 Semaphore*    pImageAcquiredSemaphore = NULL;
-Semaphore*    pRenderCompleteSemaphores[gImageCount] = { NULL };
+Semaphore*    pRenderCompleteSemaphores[KoEngine::Application::swapChainSize] = { NULL };
 
 Shader*   pBasicShader = NULL;
 Pipeline* pBasicPipeline = NULL;
@@ -34,7 +33,7 @@ Shader*   pZipTextureShader = NULL;
 Buffer*   pZipTextureVertexBuffer = NULL;
 Pipeline* pZipTexturePipeline = NULL;
 
-Buffer* pProjViewUniformBuffer[gImageCount] = { NULL };
+Buffer* pProjViewUniformBuffer[KoEngine::Application::swapChainSize] = { NULL };
 
 DescriptorSet* pDescriptorSetFrameUniforms = NULL;
 DescriptorSet* pDescriptorSetTextures = NULL;
@@ -855,7 +854,7 @@ bool MyGameApp::Init()
 		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
 		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
 		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
-		for (uint32_t i = 0; i < gImageCount; ++i)
+		for (uint32_t i = 0; i < swapChainSize; ++i)
 		{
 			CmdPoolDesc cmdPoolDesc = {};
 			cmdPoolDesc.pQueue = pGraphicsQueue;
@@ -865,7 +864,7 @@ bool MyGameApp::Init()
 			addCmd(pRenderer, &cmdDesc, &pCmds[i]);
 		}
 
-		for (uint32_t i = 0; i < gImageCount; ++i)
+		for (uint32_t i = 0; i < swapChainSize; ++i)
 		{
 			addFence(pRenderer, &pRenderCompleteFences[i]);
 			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
@@ -1031,7 +1030,7 @@ bool MyGameApp::Init()
 		ubDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 		ubDesc.pData = NULL;
 
-		for (uint32_t i = 0; i < gImageCount; ++i)
+		for (uint32_t i = 0; i < swapChainSize; ++i)
 		{
 			ubDesc.ppBuffer = &pProjViewUniformBuffer[i];
 			addResource(&ubDesc, NULL);
@@ -1273,7 +1272,7 @@ void MyGameApp::Draw()
 		queuePresent(pGraphicsQueue, &presentDesc);
 		flipProfiler();
 
-		gFrameIndex = (gFrameIndex + 1) % gImageCount;
+		gFrameIndex = (gFrameIndex + 1) % swapChainSize;
 
 		/// Exit if quick exit is enabled
 		#if ZIP_TESTS_QUICK_EXIT
@@ -1364,7 +1363,7 @@ void MyGameApp::addDescriptorSets()
 {
 	DescriptorSetDesc setDesc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
 	addDescriptorSet(pRenderer, &setDesc, &pDescriptorSetTextures);
-	setDesc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	setDesc = { pRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, swapChainSize };
 	addDescriptorSet(pRenderer, &setDesc, &pDescriptorSetFrameUniforms);
 }
 
@@ -1398,7 +1397,7 @@ void MyGameApp::prepareDescriptorSets()
 		updateDescriptorSet(pRenderer, 0, pDescriptorSetTextures, 7, params);
 	}
 
-	for (uint32_t i = 0; i < gImageCount; ++i)
+	for (uint32_t i = 0; i < swapChainSize; ++i)
 	{
 		DescriptorData params[1] = {};
 		params[0].pName = "uniformBlock";
@@ -1415,7 +1414,7 @@ bool MyGameApp::addSwapChain()
 		swapChainDesc.ppPresentQueues = &pGraphicsQueue;
 		swapChainDesc.mWidth = mSettings.mWidth;
 		swapChainDesc.mHeight = mSettings.mHeight;
-		swapChainDesc.mImageCount = gImageCount;
+		swapChainDesc.mImageCount = swapChainSize;
 		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true, true);
 		swapChainDesc.mEnableVsync = mSettings.mVSyncEnabled;
 		::addSwapChain(pRenderer, &swapChainDesc, &pSwapChain);

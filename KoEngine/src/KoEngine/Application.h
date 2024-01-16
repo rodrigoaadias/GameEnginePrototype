@@ -10,6 +10,7 @@ namespace KoEngine {
 	class KOENGINE_API Application : public IApp
 	{
 	public:
+		static const uint32_t swapChainSize = 3;
 		Application() = default;
 		virtual ~Application() = default;
 
