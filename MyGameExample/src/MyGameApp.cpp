@@ -744,13 +744,13 @@ bool MyGameApp::Init()
 			LOGF(LogLevel::eERROR, "\"%s\": Error in reading file.", pTextFileName[0]);
 			return false;
 		}
-
+		SetRenderer();
 		// Actual diffs and tests
-		RendererDesc settings;
-		memset(&settings, 0, sizeof(settings));
-		settings.mD3D11Supported = true;
-		settings.mGLESSupported = true;
-		initRenderer(GetName(), &settings, &pRenderer);
+		//RendererDesc settings;
+		//memset(&settings, 0, sizeof(settings));
+		//settings.mD3D11Supported = true;
+		//settings.mGLESSupported = true;
+		//initRenderer(GetName(), &settings, &pRenderer);
 
 		//check for init success
 		if (!pRenderer)
@@ -1524,7 +1524,14 @@ bool MyGameApp::addSwapChain()
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
 	}
-
+	void MyGameApp::SetRenderer()
+	{
+		RendererDesc settings;
+		memset(&settings, 0, sizeof(settings));
+		settings.mD3D11Supported = true;
+		settings.mGLESSupported = true;
+		initRenderer(GetName(), &settings, &pRenderer);
+	}
 	void MyGameApp::SetupSwapChain()
 	{
 		QueueDesc queueDesc = {};

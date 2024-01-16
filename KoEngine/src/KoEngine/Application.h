@@ -27,13 +27,6 @@ namespace KoEngine {
 		Fence* pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 		Semaphore* pRenderCompleteSemaphores[KoEngine::Application::swapChainSize] = { NULL };
 		/// <summary>
-		/// Sets up the command queue infrastructure, fences and semaphores for each of
-		/// the swap chain images (the amount is set in swapChainSize). Must be used in
-		/// init() because the rest of the system demands that this infrastructure be 
-		/// present.
-		/// </summary>
-
-		/// <summary>
 		/// Compares the settings of the vsync in IApp with the one in the swapChain.
 		/// If they differ then wait for the end of the graphics queue and updates the
 		/// swap chain with the new setting. This should be invoked in the beginning of

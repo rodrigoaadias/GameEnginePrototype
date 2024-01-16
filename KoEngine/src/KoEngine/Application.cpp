@@ -1,7 +1,8 @@
 #include "Application.h"
 #include "Log.h"
-#include "../KoEngine.h"
-
+#include "Graphics/Interfaces/IGraphics.h"
+#include "Resources/ResourceLoader/Interfaces/IResourceLoader.h"
+#include "Utilities/Interfaces/IMemory.h"
 namespace KoEngine {
     void Application::UpdateVSyncSettings()
     {
@@ -16,11 +17,6 @@ namespace KoEngine {
         Log::Init();
         KE_LOG_INFO("KoEngine application started!!\n");
 
-        // RendererDesc settings;
-        // memset(&settings, 0, sizeof(settings));
-        // settings.mD3D11Supported = true;
-        // settings.mGLESSupported = false;
-        // initRenderer(GetName(), &settings, &pRenderer);
         return true;
     }
 
@@ -58,4 +54,5 @@ namespace KoEngine {
         exitRenderer(pRenderer);
         pRenderer = NULL;
     }
+
 }

@@ -29,7 +29,8 @@ public:
 	bool addDepthBuffer();
 
 private:
-    void ResourcePathDirs();
+    void SetRenderer(); //FIXME: move to application when it no longer crashes
+    void ResourcePathDirs(); //FIXME: move to application when it no longer crashes
     void SetupSwapChain();
     
 };
