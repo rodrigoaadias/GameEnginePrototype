@@ -30,7 +30,7 @@ public:
 
 private:
     void ResourcePathDirs();
-    Renderer* pRenderer = nullptr;
+
     
 };
 

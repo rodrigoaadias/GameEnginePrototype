@@ -4,13 +4,13 @@
 #include "Core.h"
 
 struct ReloadDesc;
-
+class Renderer;
 namespace KoEngine {
 
 	class KOENGINE_API Application : public IApp
 	{
-	private:
-
+	protected:
+		Renderer* pRenderer = nullptr;
 	public:
 		static const uint32_t swapChainSize = 3;
 		Application() = default;
