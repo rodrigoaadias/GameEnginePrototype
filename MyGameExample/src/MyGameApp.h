@@ -38,7 +38,16 @@ private:
     /// <param name="renderTarget"></param>
     void DrawUI(Cmd* cmd, RenderTarget* renderTarget);
     void SetupSwapChain();
-    
+    /// <summary>
+    /// When we begin a frame draw we have to get the correct semaphores, targets and fences.
+    /// They vary based on the state of the swap chain. It also returns where in the swap chain
+    /// we are because that information will be needed later.
+    /// </summary>
+    /// <param name="pCurrentRenderTarget"></param>
+    /// <param name="pCurrentRenderCompleteSemaphore"></param>
+    /// <param name="pCurrentRenderCompleteFence"></param>
+    uint32_t SetupCurrentTargetSemaphoreAndFence(RenderTarget** pCurrentRenderTarget,
+        Semaphore** pCurrentRenderCompleteSemaphore, Fence** pCurrentRenderCompleteFence);
 };
 
 DEFINE_KOENGINE_APP(MyGameApp);

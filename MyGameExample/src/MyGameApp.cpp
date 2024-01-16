@@ -1011,18 +1011,22 @@ void MyGameApp::Draw()
 {
 	UpdateVSyncSettings();
 
-		uint32_t swapchainImageIndex;
+		/*uint32_t swapchainImageIndex;
 		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
+		*/
+		RenderTarget* pCurrentRenderTarget = NULL;
+		Semaphore*    pCurrentRenderCompleteSemaphore = NULL;
+		Fence*        pCurrentRenderCompleteFence = NULL;
+		
 
-		RenderTarget* pRenderTarget = pSwapChain->ppRenderTargets[swapchainImageIndex];
-		Semaphore*    pRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
-		Fence*        pRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
-
+		auto swapchainImageIndex = SetupCurrentTargetSemaphoreAndFence(&pCurrentRenderTarget, 
+			&pCurrentRenderCompleteSemaphore, 
+			&pCurrentRenderCompleteFence);
 		// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
 		FenceStatus fenceStatus;
-		getFenceStatus(pRenderer, pRenderCompleteFence, &fenceStatus);
+		getFenceStatus(pRenderer, pCurrentRenderCompleteFence, &fenceStatus);
 		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
-			waitForFences(pRenderer, 1, &pRenderCompleteFence);
+			waitForFences(pRenderer, 1, &pCurrentRenderCompleteFence);
 
 		resetCmdPool(pRenderer, pCmdPools[gFrameIndex]);
 
@@ -1043,17 +1047,17 @@ void MyGameApp::Draw()
 		beginCmd(cmd);
 
 		RenderTargetBarrier barriers[] = {
-			{ pRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
+			{ pCurrentRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
 		};
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
+		cmdBindRenderTargets(cmd, 1, &pCurrentRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, pCurrentRenderTarget->mWidth, pCurrentRenderTarget->mHeight);
 
 		//// draw skybox
 #pragma region Skybox_Draw
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 1.0f, 1.0f);
 		cmdBindPipeline(cmd, pPipelineSkybox);
 
 		cmdBindDescriptorSet(cmd, gFrameIndex, pDescriptorSetFrameUniforms);
@@ -1062,7 +1066,7 @@ void MyGameApp::Draw()
 		const uint32_t skyboxStride = sizeof(float) * 4;
 		cmdBindVertexBuffer(cmd, 1, &pSkyboxVertexBuffer, &skyboxStride, NULL);
 		cmdDraw(cmd, 36, 0);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pCurrentRenderTarget->mWidth, (float)pCurrentRenderTarget->mHeight, 0.0f, 1.0f);
 #pragma endregion
 
 		////// draw Zip Model
@@ -1084,10 +1088,10 @@ void MyGameApp::Draw()
 #pragma endregion
 
 		
-		DrawUI(cmd, pRenderTarget);
+		DrawUI(cmd, pCurrentRenderTarget);
 		
 
-		barriers[0] = { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
+		barriers[0] = { pCurrentRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
 		endCmd(cmd);
@@ -1097,14 +1101,14 @@ void MyGameApp::Draw()
 		submitDesc.mSignalSemaphoreCount = 1;
 		submitDesc.mWaitSemaphoreCount = 1;
 		submitDesc.ppCmds = &cmd;
-		submitDesc.ppSignalSemaphores = &pRenderCompleteSemaphore;
+		submitDesc.ppSignalSemaphores = &pCurrentRenderCompleteSemaphore;
 		submitDesc.ppWaitSemaphores = &pImageAcquiredSemaphore;
-		submitDesc.pSignalFence = pRenderCompleteFence;
+		submitDesc.pSignalFence = pCurrentRenderCompleteFence;
 		queueSubmit(pGraphicsQueue, &submitDesc);
 		QueuePresentDesc presentDesc = {};
 		presentDesc.mIndex = swapchainImageIndex;
 		presentDesc.mWaitSemaphoreCount = 1;
-		presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphore;
+		presentDesc.ppWaitSemaphores = &pCurrentRenderCompleteSemaphore;
 		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.mSubmitDone = true;
 		queuePresent(pGraphicsQueue, &presentDesc);
@@ -1522,3 +1526,16 @@ bool MyGameApp::addSwapChain()
 			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
 		}
 	}
+	uint32_t MyGameApp::SetupCurrentTargetSemaphoreAndFence(RenderTarget** pCurrentRenderTarget,
+		Semaphore** pCurrentRenderCompleteSemaphore, Fence** pCurrentRenderCompleteFence)
+	{
+		uint32_t swapchainImageIndex;
+		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
+
+		*pCurrentRenderTarget = pSwapChain->ppRenderTargets[swapchainImageIndex];
+		*pCurrentRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
+		*pCurrentRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
+		return swapchainImageIndex;
+	}
+
+	
