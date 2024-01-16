@@ -3,7 +3,14 @@
 #include <Graphics/Interfaces/IGraphics.h>
 
 namespace KoEngine {
-
+	void Application::UpdateVSyncSettings()
+	{
+		if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+		{
+			waitQueueIdle(pGraphicsQueue);
+			::toggleVSync(pRenderer, &pSwapChain);
+		}
+	}
 	bool Application::Init()
 	{
 		Log::Init();

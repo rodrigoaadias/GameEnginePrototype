@@ -7,11 +7,10 @@
 ProfileToken   gGpuProfileToken;
 
 
-Queue*   pGraphicsQueue = NULL;
 CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
 Cmd*     pCmds[KoEngine::Application::swapChainSize];
 
-SwapChain*    pSwapChain = NULL;
+
 RenderTarget* pDepthBuffer = NULL;
 Fence*        pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 Semaphore*    pImageAcquiredSemaphore = NULL;
@@ -1051,11 +1050,7 @@ void MyGameApp::Update(float deltaTime)
 
 void MyGameApp::Draw()
 {
-		if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
-		{
-			waitQueueIdle(pGraphicsQueue);
-			::toggleVSync(pRenderer, &pSwapChain);
-		}
+	UpdateVSyncSettings();
 
 		uint32_t swapchainImageIndex;
 		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
