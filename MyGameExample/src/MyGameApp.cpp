@@ -6,11 +6,6 @@
 
 ProfileToken   gGpuProfileToken;
 
-
-CmdPool* pCmdPools[KoEngine::Application::swapChainSize];
-Cmd*     pCmds[KoEngine::Application::swapChainSize];
-
-
 RenderTarget* pDepthBuffer = NULL;
 Fence*        pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 Semaphore*    pImageAcquiredSemaphore = NULL;
@@ -761,25 +756,8 @@ bool MyGameApp::Init()
 		if (!pRenderer)
 			return false;
 
-		QueueDesc queueDesc = {};
-		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
-		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
-		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
-		for (uint32_t i = 0; i < swapChainSize; ++i)
-		{
-			CmdPoolDesc cmdPoolDesc = {};
-			cmdPoolDesc.pQueue = pGraphicsQueue;
-			addCmdPool(pRenderer, &cmdPoolDesc, &pCmdPools[i]);
-			CmdDesc cmdDesc = {};
-			cmdDesc.pPool = pCmdPools[i];
-			addCmd(pRenderer, &cmdDesc, &pCmds[i]);
-		}
+		SetupSwapChain();
 
-		for (uint32_t i = 0; i < swapChainSize; ++i)
-		{
-			addFence(pRenderer, &pRenderCompleteFences[i]);
-			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
-		}
 		addSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
 		initResourceLoaderInterface(pRenderer);
@@ -1545,4 +1523,27 @@ bool MyGameApp::addSwapChain()
 
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
+	}
+
+	void MyGameApp::SetupSwapChain()
+	{
+		QueueDesc queueDesc = {};
+		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
+		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
+		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+		for (uint32_t i = 0; i < swapChainSize; ++i)
+		{
+			CmdPoolDesc cmdPoolDesc = {};
+			cmdPoolDesc.pQueue = pGraphicsQueue;
+			addCmdPool(pRenderer, &cmdPoolDesc, &pCmdPools[i]);
+			CmdDesc cmdDesc = {};
+			cmdDesc.pPool = pCmdPools[i];
+			addCmd(pRenderer, &cmdDesc, &pCmds[i]);
+		}
+
+		for (uint32_t i = 0; i < swapChainSize; ++i)
+		{
+			addFence(pRenderer, &pRenderCompleteFences[i]);
+			addSemaphore(pRenderer, &pRenderCompleteSemaphores[i]);
+		}
 	}

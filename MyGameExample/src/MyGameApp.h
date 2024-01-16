@@ -30,7 +30,7 @@ public:
 
 private:
     void ResourcePathDirs();
-    SwapChain* pSwapChain = NULL;
+    void SetupSwapChain();
     
 };
 
