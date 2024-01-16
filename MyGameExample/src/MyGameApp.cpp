@@ -4,8 +4,6 @@
 
 
 
-ProfileToken   gGpuProfileToken;
-
 RenderTarget* pDepthBuffer = NULL;
 Fence*        pRenderCompleteFences[KoEngine::Application::swapChainSize] = { NULL };
 Semaphore*    pImageAcquiredSemaphore = NULL;
@@ -702,7 +700,6 @@ bool MyGameApp::Init()
 	Application::Init();
 		ResourcePathDirs();
 
-
 		gVertexLayoutDefault.mAttribCount = 3;
 		gVertexLayoutDefault.mAttribs[0].mSemantic = SEMANTIC_POSITION;
 		gVertexLayoutDefault.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
@@ -745,12 +742,6 @@ bool MyGameApp::Init()
 			return false;
 		}
 		SetRenderer();
-		// Actual diffs and tests
-		//RendererDesc settings;
-		//memset(&settings, 0, sizeof(settings));
-		//settings.mD3D11Supported = true;
-		//settings.mGLESSupported = true;
-		//initRenderer(GetName(), &settings, &pRenderer);
 
 		//check for init success
 		if (!pRenderer)
@@ -777,16 +768,6 @@ bool MyGameApp::Init()
 		UserInterfaceDesc uiRenderDesc = {};
 		uiRenderDesc.pRenderer = pRenderer;
 		initUserInterface(&uiRenderDesc);
-
-		// Initialize micro profiler and its UI.
-		ProfilerDesc profiler = {};
-		profiler.pRenderer = pRenderer;
-		profiler.mWidthUI = mSettings.mWidth;
-		profiler.mHeightUI = mSettings.mHeight;
-		initProfiler(&profiler);
-
-		// Gpu profiler can only be added after initProfile.
-		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "Graphics");
 
 		//Load Zip file texture
 		TextureLoadDesc textureDescZip = {};
@@ -1061,8 +1042,6 @@ void MyGameApp::Draw()
 		Cmd* cmd = pCmds[gFrameIndex];
 		beginCmd(cmd);
 
-		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
-
 		RenderTargetBarrier barriers[] = {
 			{ pRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
 		};
@@ -1074,7 +1053,6 @@ void MyGameApp::Draw()
 
 		//// draw skybox
 #pragma region Skybox_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw skybox");
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
 		cmdBindPipeline(cmd, pPipelineSkybox);
 
@@ -1085,53 +1063,33 @@ void MyGameApp::Draw()
 		cmdBindVertexBuffer(cmd, 1, &pSkyboxVertexBuffer, &skyboxStride, NULL);
 		cmdDraw(cmd, 36, 0);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 #pragma endregion
 
 		////// draw Zip Model
 #pragma region Zip_Model_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Zip Model");
 		cmdBindPipeline(cmd, pBasicPipeline);
 
 		cmdBindVertexBuffer(cmd, 1, &pMesh->pVertexBuffers[0], &pMesh->mVertexStrides[0], NULL);
 		cmdBindIndexBuffer(cmd, pMesh->pIndexBuffer, pMesh->mIndexType, 0);
 		cmdDrawIndexed(cmd, pMesh->mIndexCount, 0, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 #pragma endregion
 
 		////draw Cube with Zip texture
 #pragma region Cube_Zip_Texture_Draw
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Zip File Texture");
 		cmdBindPipeline(cmd, pZipTexturePipeline);
 
 		const uint32_t cubeStride = sizeof(float) * 8;
 		cmdBindVertexBuffer(cmd, 1, &pZipTextureVertexBuffer, &cubeStride, NULL);
 		cmdDraw(cmd, 36, 0);
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 #pragma endregion
 
-		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
-		{
-			LoadActionsDesc loadActions = {};
-			loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
-
-			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-
-			gFrameTimeDraw.mFontColor = 0xff00ffff;
-			gFrameTimeDraw.mFontSize = 18.0f;
-			gFrameTimeDraw.mFontID = gFontID;
-			float2 txtSize = cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
-			cmdDrawGpuProfile(cmd, float2(8.f, txtSize.y + 75.f), gGpuProfileToken, &gFrameTimeDraw);
-
-			cmdDrawUserInterface(cmd);
-			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-		}
-		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+		
+		DrawUI(cmd, pRenderTarget);
+		
 
 		barriers[0] = { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT };
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-		cmdEndGpuFrameProfile(cmd, gGpuProfileToken);
 		endCmd(cmd);
 
 		QueueSubmitDesc submitDesc = {};
@@ -1523,6 +1481,16 @@ bool MyGameApp::addSwapChain()
 
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
 		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
+	}
+	void MyGameApp::DrawUI(Cmd* cmd, RenderTarget *renderTarget)
+	{
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+
+		cmdBindRenderTargets(cmd, 1, &renderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
+
+		cmdDrawUserInterface(cmd);
+		cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 	}
 	void MyGameApp::SetRenderer()
 	{

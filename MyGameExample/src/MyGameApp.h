@@ -31,6 +31,12 @@ public:
 private:
     void SetRenderer(); //FIXME: move to application when it no longer crashes
     void ResourcePathDirs(); //FIXME: move to application when it no longer crashes
+    /// <summary>
+    /// Binds the UI, draw it and then unbinds it. It's used at the end of the draw of the UI.
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <param name="renderTarget"></param>
+    void DrawUI(Cmd* cmd, RenderTarget* renderTarget);
     void SetupSwapChain();
     
 };
