@@ -79,9 +79,6 @@ const char* pModelFileName[] = { "matBall.bin" };
 FontDrawDesc gFrameTimeDraw; 
 uint32_t     gFontID = 0; 
 
-UIComponent* pGui_TextData = NULL;
-
-UIComponent* pGui_ZipData = NULL;
 
 //Zip file for testing
 const char* pZipReadFile = "28-ZipFileSystem.zip";
@@ -709,92 +706,7 @@ static bool runTests()
 bool MyGameApp::Init()
 {
 	Application::Init();
-		//testFindReverseStream();
-
-		// FILE PATHS
-		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_OTHER_FILES, "ZipFiles");
-		
-		if (!initZipFileSystem(RD_OTHER_FILES, pZipReadFile, FM_READ, NULL, &gZipReadFileSystem))
-		{
-			LOGF(eERROR, "Failed to open zip file for read.");
-			return false;
-		}
-
-		if (!initZipFileSystem(RD_OTHER_FILES, pZipReadEncryptedFile, FM_READ, NULL, &gZipReadEncryptedFileSystem))
-		{
-			LOGF(eERROR, "Failed to open encrypted zip file for read.");
-			return false;
-		}
-
-
-		// Set write directory
-		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_ZIP_WRITE_DIRECTORY, "ZipWriteFiles");
-
-
-		// Delete zip file before opening
-		char fPath[FS_MAX_PATH];
-		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteFile, fPath);
-		remove(fPath);
-		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteFile, FM_READ_WRITE, NULL, &gZipWriteFileSystem))
-		{
-			LOGF(eERROR, "Failed to open zip file for write.");
-			return false;
-		}
-
-		// Delete file before opening
-		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteEncryptedFile, fPath);
-		remove(fPath);
-
-		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteEncryptedFile, FM_READ_WRITE, NULL, &gZipWriteEncryptedFileSystem))
-		{
-			LOGF(eERROR, "Failed to open encrypted zip file for write.");
-			return false;
-		}
-
-		// Delete file before opening
-		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteOnlyFile, fPath);
-		remove(fPath);
-
-		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteOnlyFile, FM_WRITE, NULL, &gZipWriteOnlyFileSystem))
-		{
-			LOGF(eERROR, "Failed to open encrypted zip file for write.");
-			return false;
-		}
-
-		// Delete file before opening
-		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteOnlyEncryptedFile, fPath);
-		remove(fPath);
-
-		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteOnlyEncryptedFile, FM_WRITE, NULL, &gZipWriteOnlyEncryptedFileSystem))
-		{
-			LOGF(eERROR, "Failed to open encrypted zip file for write.");
-			return false;
-		}
-
-		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_SOURCES, "Shaders");
-		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
-		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "GPUCfg");
-		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
-
-		fsSetPathForResourceDir(&gZipReadEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_ENCRYPTED, "");
-		// Load files processed by asset pipeline and zipped
-		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_MESHES, "Meshes");
-		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_TEXTURES, "Textures");
-		fsSetPathForResourceDir(&gZipReadEncryptedFileSystem, RM_CONTENT, RD_FONTS, "Fonts");
-		
-		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_ZIP_TEXT_UNENCRYPTED, "");
-
-		fsSetPathForResourceDir(&gZipWriteFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE, "");
-		fsSetPathForResourceDir(&gZipWriteFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_COMPLEX_PATH, "Very/Complex/Path");
-
-		fsSetPathForResourceDir(&gZipWriteEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ENCRYPTED, "");
-		fsSetPathForResourceDir(&gZipWriteEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
-
-		fsSetPathForResourceDir(&gZipWriteOnlyFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY, "");
-		fsSetPathForResourceDir(&gZipWriteOnlyFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_COMPLEX_PATH, "Very/Complex/Path");
-
-		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
-		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
+		ResourcePathDirs();
 
 
 		gVertexLayoutDefault.mAttribCount = 3;
@@ -1042,11 +954,6 @@ bool MyGameApp::Init()
 
 		//--------------------------------
 
-		//Gui for Showing the Text of the File
-		uiCreateComponent("Opened Document", &guiDesc, &pGui_TextData);
-
-		LabelWidget textWidget;
-		luaRegisterWidget(uiCreateComponentWidget(pGui_TextData, (const char*)gText.data, &textWidget, WIDGET_TYPE_LABEL));
 
 		//--------------------------------
 
@@ -1565,4 +1472,82 @@ bool MyGameApp::addSwapChain()
 		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
 
 		return pDepthBuffer != NULL;
+	}
+
+	void MyGameApp::ResourcePathDirs()
+	{
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_OTHER_FILES, "ZipFiles");
+		if (!initZipFileSystem(RD_OTHER_FILES, pZipReadFile, FM_READ, NULL, &gZipReadFileSystem))
+		{
+			LOGF(eERROR, "Failed to open zip file for read.");
+			throw std::runtime_error("Failed to open zip file for read.");
+		}
+		if (!initZipFileSystem(RD_OTHER_FILES, pZipReadEncryptedFile, FM_READ, NULL, &gZipReadEncryptedFileSystem))
+		{
+			LOGF(eERROR, "Failed to open encrypted zip file for read.");
+			throw std::runtime_error("Failed to open encrypted zip file for read.");
+		}
+		// Set write directory
+		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_ZIP_WRITE_DIRECTORY, "ZipWriteFiles");
+		// Delete zip file before opening
+		char fPath[FS_MAX_PATH];
+		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteFile, fPath);
+		remove(fPath);
+		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteFile, FM_READ_WRITE, NULL, &gZipWriteFileSystem))
+		{
+			LOGF(eERROR, "Failed to open zip file for write.");
+			throw std::runtime_error("Failed to open zip file for write.");
+		}
+		// Delete file before opening
+		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteEncryptedFile, fPath);
+		remove(fPath);
+		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteEncryptedFile, FM_READ_WRITE, NULL, &gZipWriteEncryptedFileSystem))
+		{
+			LOGF(eERROR, "Failed to open encrypted zip file for write.");
+			throw std::runtime_error("Failed to open encrypted zip file for write.");
+		}
+
+		// Delete file before opening
+		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteOnlyFile, fPath);
+		remove(fPath);
+
+		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteOnlyFile, FM_WRITE, NULL, &gZipWriteOnlyFileSystem))
+		{
+			LOGF(eERROR, "Failed to open encrypted zip file for write.");
+			throw std::runtime_error("Failed to open encrypted zip file for write.");
+		}
+
+		// Delete file before opening
+		fsAppendPathComponent(fsGetResourceDirectory(RD_ZIP_WRITE_DIRECTORY), pZipWriteOnlyEncryptedFile, fPath);
+		remove(fPath);
+
+		if (!initZipFileSystem(RD_ZIP_WRITE_DIRECTORY, pZipWriteOnlyEncryptedFile, FM_WRITE, NULL, &gZipWriteOnlyEncryptedFileSystem))
+		{
+			LOGF(eERROR, "Failed to open encrypted zip file for write.");
+			throw std::runtime_error("Failed to open encrypted zip file for write.");
+		}
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_SOURCES, "Shaders");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "GPUCfg");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
+
+		fsSetPathForResourceDir(&gZipReadEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_ENCRYPTED, "");
+		// Load files processed by asset pipeline and zipped
+		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_MESHES, "Meshes");
+		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_TEXTURES, "Textures");
+		fsSetPathForResourceDir(&gZipReadEncryptedFileSystem, RM_CONTENT, RD_FONTS, "Fonts");
+
+		fsSetPathForResourceDir(&gZipReadFileSystem, RM_CONTENT, RD_ZIP_TEXT_UNENCRYPTED, "");
+
+		fsSetPathForResourceDir(&gZipWriteFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE, "");
+		fsSetPathForResourceDir(&gZipWriteFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_COMPLEX_PATH, "Very/Complex/Path");
+
+		fsSetPathForResourceDir(&gZipWriteEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ENCRYPTED, "");
+		fsSetPathForResourceDir(&gZipWriteEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
+
+		fsSetPathForResourceDir(&gZipWriteOnlyFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY, "");
+		fsSetPathForResourceDir(&gZipWriteOnlyFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_COMPLEX_PATH, "Very/Complex/Path");
+
+		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED, "");
+		fsSetPathForResourceDir(&gZipWriteOnlyEncryptedFileSystem, RM_CONTENT, RD_ZIP_TEXT_WRITE_ONLY_ENCRYPTED_COMPLEX_PATH, "Very/Complex/Path");
 	}

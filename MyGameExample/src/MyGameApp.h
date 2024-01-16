@@ -29,6 +29,7 @@ public:
 	bool addDepthBuffer();
 
 private:
+    void ResourcePathDirs();
     Renderer* pRenderer = nullptr;
     
 };
