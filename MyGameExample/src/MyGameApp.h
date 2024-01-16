@@ -48,6 +48,12 @@ private:
     /// <param name="pCurrentRenderCompleteFence"></param>
     uint32_t SetupCurrentTargetSemaphoreAndFence(RenderTarget** pCurrentRenderTarget,
         Semaphore** pCurrentRenderCompleteSemaphore, Fence** pCurrentRenderCompleteFence);
+    /// <summary>
+    /// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+    /// Will block waiting.
+    /// </summary>
+    /// <param name="renderCompleteFence"></param>
+    void StallIfCPUIsRunningAhead(Fence* renderCompleteFence);
 };
 
 DEFINE_KOENGINE_APP(MyGameApp);

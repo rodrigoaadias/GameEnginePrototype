@@ -1009,24 +1009,21 @@ void MyGameApp::Update(float deltaTime)
 
 void MyGameApp::Draw()
 {
+	//before each frame verify if the vsync setting is consistent.
 	UpdateVSyncSettings();
-
-		/*uint32_t swapchainImageIndex;
-		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &swapchainImageIndex);
-		*/
-		RenderTarget* pCurrentRenderTarget = NULL;
-		Semaphore*    pCurrentRenderCompleteSemaphore = NULL;
-		Fence*        pCurrentRenderCompleteFence = NULL;
-		
-
-		auto swapchainImageIndex = SetupCurrentTargetSemaphoreAndFence(&pCurrentRenderTarget, 
-			&pCurrentRenderCompleteSemaphore, 
-			&pCurrentRenderCompleteFence);
-		// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
-		FenceStatus fenceStatus;
-		getFenceStatus(pRenderer, pCurrentRenderCompleteFence, &fenceStatus);
-		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
-			waitForFences(pRenderer, 1, &pCurrentRenderCompleteFence);
+	//Get the pointers to the things that belong to the current swapchain image
+	RenderTarget* pCurrentRenderTarget = NULL;
+	Semaphore*    pCurrentRenderCompleteSemaphore = NULL;
+	Fence*        pCurrentRenderCompleteFence = NULL;
+	auto swapchainImageIndex = SetupCurrentTargetSemaphoreAndFence(&pCurrentRenderTarget, 
+		&pCurrentRenderCompleteSemaphore, 
+		&pCurrentRenderCompleteFence);
+	StallIfCPUIsRunningAhead(pCurrentRenderCompleteFence);
+		//// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+		//FenceStatus fenceStatus;
+		//getFenceStatus(pRenderer, pCurrentRenderCompleteFence, &fenceStatus);
+		//if (fenceStatus == FENCE_STATUS_INCOMPLETE)
+		//	waitForFences(pRenderer, 1, &pCurrentRenderCompleteFence);
 
 		resetCmdPool(pRenderer, pCmdPools[gFrameIndex]);
 
@@ -1536,6 +1533,15 @@ bool MyGameApp::addSwapChain()
 		*pCurrentRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
 		*pCurrentRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
 		return swapchainImageIndex;
+	}
+
+	void MyGameApp::StallIfCPUIsRunningAhead(Fence* renderCompleteFence)
+	{
+		// Stall if CPU is running "Swap Chain Buffer Count" frames ahead of GPU
+		FenceStatus fenceStatus;
+		getFenceStatus(pRenderer, renderCompleteFence, &fenceStatus);
+		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
+			waitForFences(pRenderer, 1, &renderCompleteFence);
 	}
 
 	
