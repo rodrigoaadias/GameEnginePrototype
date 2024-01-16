@@ -11,12 +11,7 @@ struct UniformBlock
 	mat4 mModelMatCube;
 };
 
-struct Vertex
-{
-	float3 mPosition;
-	float3 mNormal;
-	float2 mUV;
-};
+
 
 const uint32_t gImageCount = 3;
 ProfileToken   gGpuProfileToken;
